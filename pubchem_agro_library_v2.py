@@ -302,6 +302,10 @@ def download_and_filter(output_file, resume=False, skip_ghs=False, **filter_kwar
                 stats["parse_error"] += 1
                 continue
 
+            if "." in smiles:
+                stats["fragmented"] += 1
+                continue
+
             passed, mol, props, mw_bin = passes_filters(smiles, **filter_kwargs)
 
             if passed:
@@ -356,6 +360,7 @@ def download_and_filter(output_file, resume=False, skip_ghs=False, **filter_kwar
     print(f"  Total processed: {total_processed:,}")
     print(f"  Passed filters:  {passed_count:,}")
     print(f"  Filtered out:    {stats['filtered']:,}")
+    print(f"  Fragmented:      {stats.get('fragmented', 0):,}")
     print(f"  Parse errors:    {stats.get('parse_error', 0):,}")
     print(f"  Time: {elapsed/60:.1f} min ({elapsed/3600:.1f} hours)")
     print(f"\n  MW Bin distribution:")
