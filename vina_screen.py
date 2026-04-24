@@ -108,20 +108,17 @@ def dock_one(item):
 
         Chem.MolToPDBFile(mol, pdb_path)
 
-        if config["obabel"]:
-            proc = subprocess.run(
-                [config["obabel"], pdb_path, "-O", pdbqt_path,
-                 "--gen3d" if False else "-xr", "-p", "7.4"],
-                capture_output=True, timeout=30)
-            if not os.path.exists(pdbqt_path) or os.path.getsize(pdbqt_path) == 0:
-                proc = subprocess.run(
-                    [config["obabel"], pdb_path, "-O", pdbqt_path],
-                    capture_output=True, timeout=30)
-        else:
+        if config["use_mgltools"]:
             proc = subprocess.run(
                 [MGL_PYTHON, PREPARE_LIGAND, "-l", pdb_path, "-o", pdbqt_path,
                  "-A", "hydrogens"],
                 capture_output=True, timeout=60)
+        elif config["obabel"]:
+            proc = subprocess.run(
+                [config["obabel"], pdb_path, "-O", pdbqt_path],
+                capture_output=True, timeout=30)
+        else:
+            return name, smiles, None, "no_converter"
 
         if not os.path.exists(pdbqt_path) or os.path.getsize(pdbqt_path) == 0:
             return name, smiles, None, "conversion_failed"
@@ -211,14 +208,16 @@ def main():
         print("ERROR: No docking executable found (QuickVina2 or Vina)")
         sys.exit(1)
 
+    use_mgltools = os.path.isfile(MGL_PYTHON) and os.path.isfile(PREPARE_LIGAND)
     obabel_path = find_obabel()
-    if not obabel_path:
-        if not (os.path.isfile(MGL_PYTHON) and os.path.isfile(PREPARE_LIGAND)):
-            print("ERROR: No PDBQT converter found (obabel or MGLTools)")
-            sys.exit(1)
-        print(f"Using MGLTools prepare_ligand4.py for conversion")
-    else:
+
+    if use_mgltools:
+        print(f"Using MGLTools prepare_ligand4.py for PDBQT conversion (reliable)")
+    elif obabel_path:
         print(f"Using obabel: {obabel_path}")
+    else:
+        print("ERROR: No PDBQT converter found (MGLTools or obabel)")
+        sys.exit(1)
 
     print(f"Docking engine: {docking_exe}")
     print(f"Receptor: {args.receptor}")
@@ -278,6 +277,7 @@ def main():
             "exhaustiveness": args.exhaustiveness,
             "timeout": args.timeout,
             "docking_exe": docking_exe,
+            "use_mgltools": use_mgltools,
             "obabel": obabel_path,
             "tmp_dir": os.path.abspath(tmp_dir),
         }
