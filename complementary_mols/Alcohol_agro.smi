@@ -1,0 +1,16 @@
+CO	methanol
+CCO	ethanol
+CCCO	1-propanol
+CC(C)O	isopropanol
+CCCCO	1-butanol
+CC(C)CO	isobutanol
+C=CCO	allyl_alcohol
+OCc1ccccc1	benzyl_alcohol
+OC1CCCCC1	cyclohexanol
+CCCCCO	1-pentanol
+OC1CC1	cyclopropanol
+CCC(C)O	2-butanol
+Oc1ccccc1	phenol
+OCC1CCCCC1	cyclohexylmethanol
+OCCO	ethylene_glycol
+CC(C)(C)O	tert-butanol

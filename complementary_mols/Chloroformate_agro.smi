@@ -1,0 +1,14 @@
+CCOC(=O)Cl	ethyl_chloroformate
+COC(=O)Cl	methyl_chloroformate
+O=C(Cl)OCc1ccccc1	benzyl_chloroformate
+CCCOC(=O)Cl	propyl_chloroformate
+CC(C)COC(=O)Cl	isobutyl_chloroformate
+CC(C)OC(=O)Cl	isopropyl_chloroformate
+CCCCOC(=O)Cl	butyl_chloroformate
+CC(C)(C)OC(=O)Cl	tert-butyl_chloroformate
+O=C(Cl)OC1CCCCC1	cyclohexyl_chloroformate
+CCCCCOC(=O)Cl	pentyl_chloroformate
+C=CCOC(=O)Cl	allyl_chloroformate
+O=C(Cl)OCCCl	2-chloroethyl_chloroformate
+O=C(Cl)OCCF	2-fluoroethyl_chloroformate
+O=C(Cl)Oc1ccccc1	phenyl_chloroformate

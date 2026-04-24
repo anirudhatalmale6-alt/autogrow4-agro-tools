@@ -1,0 +1,12 @@
+C(=N/c1ccccc1)/c1ccccc1	N-benzylideneaniline
+Cc1ccc(/N=C\c2ccccc2)cc1	N-benzylidene-4-methylaniline
+Clc1ccc(/C=N\c2ccccc2)cc1	N-(4-chlorobenzylidene)aniline
+COc1ccc(/C=N\c2ccccc2)cc1	N-(4-methoxybenzylidene)aniline
+Fc1ccc(/N=C\c2ccccc2)cc1	N-benzylidene-4-fluoroaniline
+CC/N=C\c1ccccc1	N-benzylideneethylamine
+CC=NC	N-ethylidene-methylamine
+O=[N+]([O-])c1ccc(/C=N\c2ccccc2)cc1	N-(4-nitrobenzylidene)aniline
+C(=N/c1ccccc1)/c1ccccn1	N-(2-pyridylidene)aniline
+Brc1ccc(/C=N\c2ccccc2)cc1	N-(4-bromobenzylidene)aniline
+C(=Nc1ccccc1)c1ccco1	N-furfurylideneaniline
+CC(C)=Nc1ccccc1	N-isopropylideneaniline

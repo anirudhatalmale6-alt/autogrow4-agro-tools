@@ -1,0 +1,15 @@
+CS(=O)(=O)Cl	methanesulfonyl_chloride
+O=S(=O)(Cl)c1ccccc1	benzenesulfonyl_chloride
+O=S(=O)(Cl)c1ccc(Cl)cc1	4-chlorobenzenesulfonyl_chloride
+Cc1ccc(S(=O)(=O)Cl)cc1	4-toluenesulfonyl_chloride
+O=S(=O)(Cl)c1ccc(F)cc1	4-fluorobenzenesulfonyl_chloride
+CCS(=O)(=O)Cl	ethanesulfonyl_chloride
+O=S(=O)(Cl)C(F)(F)F	trifluoromethanesulfonyl_chloride
+O=S(=O)(Cl)c1ccc(Br)cc1	4-bromobenzenesulfonyl_chloride
+COc1ccc(S(=O)(=O)Cl)cc1	4-methoxybenzenesulfonyl_chloride
+O=S(=O)(Cl)c1ccc2ccccc2c1	2-naphthalenesulfonyl_chloride
+Cc1cc(C)cc(S(=O)(=O)Cl)c1	3,5-dimethylbenzenesulfonyl_chloride
+CCCS(=O)(=O)Cl	1-propanesulfonyl_chloride
+O=S(=O)(Cl)c1cccnc1	3-pyridinesulfonyl_chloride
+O=S(=O)(Cl)c1cccs1	2-thiophenesulfonyl_chloride
+O=[N+]([O-])c1ccc(S(=O)(=O)Cl)cc1	4-nitrobenzenesulfonyl_chloride

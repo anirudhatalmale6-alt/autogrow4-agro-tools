@@ -1,0 +1,16 @@
+Oc1ccccc1	phenol
+Cc1ccc(O)cc1	4-methylphenol
+Oc1ccc2ccccc2c1	2-naphthol
+Oc1ccc(Cl)cc1	4-chlorophenol
+O=[N+]([O-])c1ccc(O)cc1	4-nitrophenol
+Oc1ccc(F)cc1	4-fluorophenol
+COc1ccc(O)cc1	4-methoxyphenol
+Oc1cccc(O)c1	resorcinol
+Oc1ccc(Br)cc1	4-bromophenol
+Oc1cc(Cl)ccc1Cl	2,4-dichlorophenol
+Oc1c(Cl)cc(Cl)cc1Cl	2,4,6-trichlorophenol
+Oc1ccccc1O	catechol
+CC(C)(C)c1ccc(O)cc1	4-tert-butylphenol
+Oc1ccc(C(F)(F)F)cc1	4-trifluoromethylphenol
+Oc1ccncc1	4-hydroxypyridine
+Cc1cc(C)cc(O)c1	3,5-dimethylphenol

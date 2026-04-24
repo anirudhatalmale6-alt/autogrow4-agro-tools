@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.jpg
+*.JPG
+*.jpeg
+*.png
+*.docx
+*.progress
+*.tmp

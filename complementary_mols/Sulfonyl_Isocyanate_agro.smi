@@ -1,0 +1,12 @@
+O=C=NS(=O)(=O)c1ccccc1	benzenesulfonyl_isocyanate
+Cc1ccc(S(=O)(=O)N=C=O)cc1	4-toluenesulfonyl_isocyanate
+CS(=O)(=O)N=C=O	methanesulfonyl_isocyanate
+O=C=NS(=O)(=O)c1ccc(Cl)cc1	4-chlorobenzenesulfonyl_isocyanate
+O=C=NS(=O)(=O)c1ccc(F)cc1	4-fluorobenzenesulfonyl_isocyanate
+CCS(=O)(=O)N=C=O	ethanesulfonyl_isocyanate
+COc1ccc(S(=O)(=O)N=C=O)cc1	4-methoxybenzenesulfonyl_isocyanate
+O=C=NS(=O)(=O)c1ccc(Br)cc1	4-bromobenzenesulfonyl_isocyanate
+O=C=NS(=O)(=O)c1ccc([N+](=O)[O-])cc1	4-nitrobenzenesulfonyl_isocyanate
+O=C=NS(=O)(=O)C(F)(F)F	trifluoromethanesulfonyl_isocyanate
+O=C=NS(=O)(=O)c1cccs1	2-thiophenesulfonyl_isocyanate
+O=C=NS(=O)(=O)c1cccnc1	3-pyridinesulfonyl_isocyanate

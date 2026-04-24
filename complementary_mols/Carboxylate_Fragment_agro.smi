@@ -1,0 +1,15 @@
+CC(=O)O	acetic_acid
+O=C(O)c1ccccc1	benzoic_acid
+O=C(O)c1cccnc1	nicotinic_acid
+O=C(O)COc1ccc(Cl)cc1Cl	2,4-D_acid
+O=C(O)CC(=O)O	malonic_acid
+O=C(O)CCC(=O)O	succinic_acid
+CCC(=O)O	propionic_acid
+O=C(O)c1cccc(Cl)c1	3-chlorobenzoic_acid
+O=C(O)/C=C/c1ccccc1	trans-cinnamic_acid
+O=C(O)c1ccoc1	3-furoic_acid
+O=C(O)c1cccs1	2-thiophenecarboxylic_acid
+O=C(O)c1cc(F)cc(F)c1	3,5-difluorobenzoic_acid
+CC(C)CC(=O)O	3-methylbutanoic_acid
+O=C(O)C1CCCCC1	cyclohexanecarboxylic_acid
+O=C(O)c1ccc(F)cc1	4-fluorobenzoic_acid

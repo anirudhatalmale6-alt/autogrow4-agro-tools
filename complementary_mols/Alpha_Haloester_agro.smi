@@ -1,0 +1,15 @@
+CCOC(=O)CBr	ethyl_bromoacetate
+COC(=O)CCl	methyl_chloroacetate
+CCOC(=O)C(C)Br	ethyl_2-bromopropanoate
+COC(=O)CBr	methyl_bromoacetate
+CCOC(=O)CCl	ethyl_chloroacetate
+CCOC(=O)C(Br)CC	ethyl_2-bromobutanoate
+COC(=O)C(C)Cl	methyl_2-chloropropanoate
+CCOC(=O)C(C)F	ethyl_2-fluoropropanoate
+CCOC(=O)C(Cl)(Cl)Cl	ethyl_trichloroacetate
+COC(=O)C(Cl)Cl	methyl_dichloroacetate
+CCOC(=O)C(Br)c1ccccc1	ethyl_2-bromophenylacetate
+COC(=O)C(Cl)c1ccccc1	methyl_2-chlorophenylacetate
+CCOC(=O)C(C)(C)Br	ethyl_2-bromo-2-methylpropanoate
+COC(=O)CF	methyl_fluoroacetate
+CCOC(=O)C(Br)CC(C)C	ethyl_2-bromo-4-methylpentanoate

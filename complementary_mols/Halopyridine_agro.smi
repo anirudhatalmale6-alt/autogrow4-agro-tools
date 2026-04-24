@@ -1,0 +1,15 @@
+Clc1ccccn1	2-chloropyridine
+Clc1cccnc1	3-chloropyridine
+Clc1ccncc1	4-chloropyridine
+Brc1ccccn1	2-bromopyridine
+Brc1cccnc1	3-bromopyridine
+Brc1ccncc1	4-bromopyridine
+Clc1cccc(Cl)n1	2,6-dichloropyridine
+Clc1ccnc(Cl)c1	2,4-dichloropyridine
+Clc1cc(Cl)nc(Cl)c1	2,4,6-trichloropyridine
+Cc1cc(Cl)ccn1	2-chloro-6-methylpyridine
+Clc1cnc(Cl)nc1	2,4-dichloropyrimidine
+Fc1ccnc(Cl)c1	2-chloro-4-fluoropyridine
+Clc1ccc2ncccc2n1	2-chloro-1,8-naphthyridine
+N#Cc1ccnc(Cl)c1	2-chloro-4-cyanopyridine
+Brc1cnc2ccccc2c1	3-bromoquinoline

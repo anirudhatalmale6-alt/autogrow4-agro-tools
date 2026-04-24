@@ -1,0 +1,12 @@
+O=C1OC(=O)c2ccccc21	phthalic_anhydride
+O=C1CCC(=O)O1	succinic_anhydride
+O=C1C=CC(=O)O1	maleic_anhydride
+O=C1CCCC(=O)O1	glutaric_anhydride
+O=C1OC(=O)c2cc(Cl)ccc21	4-chlorophthalic_anhydride
+O=C1OC(=O)c2cc([N+](=O)[O-])ccc21	4-nitrophthalic_anhydride
+CC1CC(=O)OC1=O	methylsuccinic_anhydride
+O=C1OC(=O)c2cc3ccccc3cc21	2,3-naphthalenedicarboxylic_anhydride
+O=C1OC(=O)C2CC=CC12	cis-5-norbornene-endo-2,3-dicarboxylic_anhydride
+CC(C)C1CC(=O)OC1=O	2-isopropylsuccinic_anhydride
+O=C1NC(=O)c2ccccc21	isatoic_anhydride
+O=C1OC(=O)c2cc(F)ccc21	4-fluorophthalic_anhydride

@@ -1,0 +1,16 @@
+O=Cc1ccccc1	benzaldehyde
+CC(C)=O	acetone
+O=C1CCCCC1	cyclohexanone
+O=Cc1ccc(Cl)cc1	4-chlorobenzaldehyde
+CCC(C)=O	butanone
+CCC=O	propanal
+COc1ccc(C=O)cc1	4-methoxybenzaldehyde
+O=Cc1ccc(F)cc1	4-fluorobenzaldehyde
+O=Cc1ccccn1	2-pyridinecarboxaldehyde
+O=Cc1ccco1	furfural
+O=Cc1cccs1	2-thiophenecarboxaldehyde
+O=Cc1ccc([N+](=O)[O-])cc1	4-nitrobenzaldehyde
+CC(=O)c1ccccc1	acetophenone
+O=C1CCCC1	cyclopentanone
+CCCC(C)=O	2-pentanone
+COc1cc(C=O)cc(OC)c1OC	3,4,5-trimethoxybenzaldehyde

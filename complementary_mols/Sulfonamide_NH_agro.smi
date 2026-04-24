@@ -1,0 +1,15 @@
+NS(=O)(=O)c1ccccc1	benzenesulfonamide
+CS(N)(=O)=O	methanesulfonamide
+Cc1ccc(S(N)(=O)=O)cc1	4-methylbenzenesulfonamide
+NS(=O)(=O)c1ccc(Cl)cc1	4-chlorobenzenesulfonamide
+NS(=O)(=O)c1ccc(F)cc1	4-fluorobenzenesulfonamide
+CCS(N)(=O)=O	ethanesulfonamide
+COc1ccc(S(N)(=O)=O)cc1	4-methoxybenzenesulfonamide
+NS(=O)(=O)c1ccccn1	2-pyridinesulfonamide
+NS(=O)(=O)c1cccs1	2-thiophenesulfonamide
+Nc1ccc(S(N)(=O)=O)cc1	sulfanilamide
+NS(=O)(=O)c1ccc(Br)cc1	4-bromobenzenesulfonamide
+NS(=O)(=O)c1ccc(C(F)(F)F)cc1	4-trifluoromethylbenzenesulfonamide
+NS(=O)(=O)c1ccc2ccccc2c1	2-naphthalenesulfonamide
+CNS(=O)(=O)c1ccccc1	N-methylbenzenesulfonamide
+CNS(C)(=O)=O	N-methylmethanesulfonamide

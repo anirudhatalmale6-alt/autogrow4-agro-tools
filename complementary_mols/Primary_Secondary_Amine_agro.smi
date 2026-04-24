@@ -1,0 +1,16 @@
+NCC	Ethylamine
+NCCC	Propylamine
+NCC(C)C	Isobutylamine
+NCC1CCCCC1	Cyclohexylmethylamine
+NCc1ccccc1	Benzylamine
+Nc1ccccc1	Aniline
+NC1CCCCC1	Cyclohexylamine
+Nc1ccncc1	4-Aminopyridine
+CNCC	N-Methylethylamine
+CNC1CCCCC1	N-Methylcyclohexylamine
+C1CCNCC1	Piperidine
+C1CNCCN1	Piperazine
+Nc1ccc(F)cc1	4-Fluoroaniline
+Nc1ccc(Cl)cc1	4-Chloroaniline
+NCC(=O)O	Glycine
+Nc1cccc(C(F)(F)F)c1	3-Aminobenzotrifluoride

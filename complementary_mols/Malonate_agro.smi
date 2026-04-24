@@ -1,0 +1,13 @@
+COC(=O)CC(=O)OC	dimethyl_malonate
+CCOC(=O)CC(=O)OCC	diethyl_malonate
+COC(=O)C(C)C(=O)OC	dimethyl_methylmalonate
+CCOC(=O)C(C)C(=O)OCC	diethyl_methylmalonate
+CCOC(=O)C(CC)C(=O)OCC	diethyl_ethylmalonate
+CCOC(=O)C(Cc1ccccc1)C(=O)OCC	diethyl_benzylmalonate
+COC(=O)C(F)C(=O)OC	dimethyl_fluoromalonate
+C=CCC(C(=O)OCC)C(=O)OCC	diethyl_allylmalonate
+CCOC(=O)C(C(=O)OCC)C(C)C	diethyl_isopropylmalonate
+COC(=O)C(Cl)C(=O)OC	dimethyl_chloromalonate
+CCOC(=O)C(C)(C)C(=O)OCC	diethyl_dimethylmalonate
+C#CCC(C(=O)OCC)C(=O)OCC	diethyl_propargylmalonate
+COC(=O)CC(=O)OC(C)(C)C	methyl_tert-butyl_malonate

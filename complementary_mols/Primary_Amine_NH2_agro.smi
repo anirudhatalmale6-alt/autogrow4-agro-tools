@@ -1,0 +1,16 @@
+NCc1ccccc1	benzylamine
+Nc1ccccc1	aniline
+Nc1ccncc1	4-aminopyridine
+CCN	ethylamine
+NC1CCCCC1	cyclohexylamine
+CCCN	propylamine
+CC(C)N	isopropylamine
+Nc1ccc(Cl)cc1	4-chloroaniline
+Nc1ccc(F)cc1	4-fluoroaniline
+Nc1cccc(C(F)(F)F)c1	3-trifluoromethylaniline
+COc1ccc(N)cc1	4-methoxyaniline
+NCC1CCCCC1	cyclohexylmethylamine
+Nc1ccc2ccccc2c1	2-naphthylamine
+C=CCN	allylamine
+Nc1ncccn1	2-aminopyrimidine
+CC(C)N	sec-butylamine

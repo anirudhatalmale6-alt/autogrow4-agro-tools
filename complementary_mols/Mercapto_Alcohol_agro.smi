@@ -1,0 +1,16 @@
+OCCS	2-mercaptoethanol
+OCC(O)CS	thioglycerol
+O=C(O)CCS	3-mercaptopropionic_acid
+O=C(O)CS	thioglycolic_acid
+OCCCS	3-mercapto-1-propanol
+SC1CCCCC1	cyclohexanethiol
+CS	methanethiol
+CCS	ethanethiol
+CCCS	1-propanethiol
+Sc1ccccc1	thiophenol
+Sc1ccc(Cl)cc1	4-chlorothiophenol
+CC(C)S	2-propanethiol
+Cc1ccc(S)cc1	4-methylthiophenol
+Fc1ccc(S)cc1	4-fluorothiophenol
+CCCCS	1-butanethiol
+COc1ccc(S)cc1	4-methoxythiophenol

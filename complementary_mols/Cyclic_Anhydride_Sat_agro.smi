@@ -1,0 +1,12 @@
+O=C1CCC(=O)O1	succinic_anhydride
+O=C1CCCC(=O)O1	glutaric_anhydride
+CC1CC(=O)OC1=O	methylsuccinic_anhydride
+CC(C)C1CC(=O)OC1=O	2-isopropylsuccinic_anhydride
+CC1(C)CC(=O)OC1=O	2,2-dimethylsuccinic_anhydride
+CC(C)CC1CC(=O)OC1=O	2-isobutylsuccinic_anhydride
+CC1CC(=O)OC(=O)C1	3-methylglutaric_anhydride
+CC1CC(=O)OC(=O)C1C	3,4-dimethylglutaric_anhydride
+O=C1CCCCC(=O)O1	adipic_anhydride
+O=C(O)CC1CC(=O)OC1=O	2-(carboxymethyl)succinic_anhydride
+O=C1CC(F)C(=O)O1	3-fluorosuccinic_anhydride
+O=C1CC(Cl)C(=O)O1	3-chlorosuccinic_anhydride
