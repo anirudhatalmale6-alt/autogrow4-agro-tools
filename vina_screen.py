@@ -31,10 +31,10 @@ MGLTOOLS_DIR = os.path.expanduser("~/final_project/mgltools_x86_64Linux2_1.5.7")
 
 QVINA2_PATH = os.path.join(
     AUTOGROW_DIR, "autogrow", "docking", "docking_executables",
-    "q_vina_2", "q_vina_2_1_linux")
+    "q_vina_2", "q_vina_2_1_linux", "qvina2.1")
 VINA_PATH = os.path.join(
     AUTOGROW_DIR, "autogrow", "docking", "docking_executables",
-    "vina", "autodock_vina_1_1_2_linux_x86")
+    "vina", "autodock_vina_1_1_2_linux_x86", "bin", "vina")
 
 PREPARE_LIGAND = os.path.join(
     MGLTOOLS_DIR, "MGLToolsPckgs", "AutoDockTools", "Utilities24",
