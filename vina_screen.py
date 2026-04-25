@@ -3,6 +3,8 @@
 Virtual Screen: Dock a SMILES database against a receptor with QuickVina2/Vina.
 Parallelized with multiprocessing for HPC use.
 
+Uses RDKit for 3D generation and built-in PDBQT writer (no obabel/MGLTools needed).
+
 Usage:
   python vina_screen.py -i library.smi -r receptor.pdbqt -o results
   python vina_screen.py -i library.smi -r receptor.pdbqt -o results --resume
@@ -14,12 +16,11 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
 import time
 
 try:
     from rdkit import Chem
-    from rdkit.Chem import AllChem
+    from rdkit.Chem import AllChem, Descriptors
     from rdkit import RDLogger
     RDLogger.DisableLog("rdApp.*")
 except ImportError:
@@ -27,7 +28,6 @@ except ImportError:
     sys.exit(1)
 
 AUTOGROW_DIR = os.path.expanduser("~/final_project/autogrow4")
-MGLTOOLS_DIR = os.path.expanduser("~/final_project/mgltools_x86_64Linux2_1.5.7")
 
 QVINA2_PATH = os.path.join(
     AUTOGROW_DIR, "autogrow", "docking", "docking_executables",
@@ -36,22 +36,78 @@ VINA_PATH = os.path.join(
     AUTOGROW_DIR, "autogrow", "docking", "docking_executables",
     "vina", "autodock_vina_1_1_2_linux_x86", "bin", "vina")
 
-PREPARE_LIGAND = os.path.join(
-    MGLTOOLS_DIR, "MGLToolsPckgs", "AutoDockTools", "Utilities24",
-    "prepare_ligand4.py")
-MGL_PYTHON = os.path.join(MGLTOOLS_DIR, "bin", "pythonsh")
+
+AD4_ATOM_TYPES = {
+    (6, False): "C",
+    (6, True): "A",
+    (7, False): "NA",
+    (7, True): "NA",
+    (8, False): "OA",
+    (8, True): "OA",
+    (9, False): "F",
+    (15, False): "P",
+    (16, False): "SA",
+    (16, True): "SA",
+    (17, False): "Cl",
+    (35, False): "Br",
+    (53, False): "I",
+    (14, False): "Si",
+    (5, False): "B",
+}
 
 
-def find_obabel():
-    for path in [
-        shutil.which("obabel"),
-        os.path.expanduser("~/miniconda3/envs/ag4_full/bin/obabel"),
-        os.path.expanduser("~/miniconda3/envs/bpsim/bin/obabel"),
-        os.path.expanduser("~/miniconda3/bin/obabel"),
-    ]:
-        if path and os.path.isfile(path):
-            return path
-    return None
+def get_ad4_type(atom):
+    """Get AutoDock4 atom type for an RDKit atom."""
+    num = atom.GetAtomicNum()
+    if num == 1:
+        for nb in atom.GetNeighbors():
+            if nb.GetAtomicNum() in (7, 8, 16):
+                return "HD"
+        return "H"
+    arom = atom.GetIsAromatic()
+    return AD4_ATOM_TYPES.get((num, arom), atom.GetSymbol())
+
+
+def mol_to_pdbqt(mol, path):
+    """Write RDKit mol to PDBQT format with Gasteiger charges."""
+    AllChem.ComputeGasteigerCharges(mol)
+    conf = mol.GetConformer()
+
+    lines = ["ROOT"]
+    atom_idx = 0
+    for i, atom in enumerate(mol.GetAtoms()):
+        pos = conf.GetAtomPosition(i)
+        ad4_type = get_ad4_type(atom)
+        try:
+            charge = float(atom.GetDoubleProp("_GasteigerCharge"))
+            if charge != charge:  # NaN check
+                charge = 0.0
+        except Exception:
+            charge = 0.0
+
+        atom_idx += 1
+        name = atom.GetSymbol()
+        if len(name) == 1:
+            name = f" {name}  "
+        elif len(name) == 2:
+            name = f" {name} "
+        else:
+            name = f"{name:4s}"
+
+        line = (f"ATOM  {atom_idx:5d} {name}"
+                f" LIG     1    "
+                f"{pos.x:8.3f}{pos.y:8.3f}{pos.z:8.3f}"
+                f"  1.00  0.00    "
+                f"{charge:+6.3f} {ad4_type:<2s}")
+        lines.append(line)
+
+    lines.append("ENDROOT")
+    lines.append("TORSDOF 0")
+
+    with open(path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    return True
 
 
 def find_docking_exe():
@@ -59,7 +115,7 @@ def find_docking_exe():
         return QVINA2_PATH
     if os.path.isfile(VINA_PATH) and os.access(VINA_PATH, os.X_OK):
         return VINA_PATH
-    for name in ["qvina2", "qvina02", "vina"]:
+    for name in ["qvina2", "qvina2.1", "qvina02", "vina"]:
         p = shutil.which(name)
         if p:
             return p
@@ -82,7 +138,6 @@ def dock_one(item):
     work_dir = os.path.join(config["tmp_dir"], f"worker_{pid}")
     os.makedirs(work_dir, exist_ok=True)
 
-    pdb_path = os.path.join(work_dir, "lig.pdb")
     pdbqt_path = os.path.join(work_dir, "lig.pdbqt")
     out_path = os.path.join(work_dir, "lig_out.pdbqt")
 
@@ -106,19 +161,8 @@ def dock_one(item):
         except Exception:
             pass
 
-        Chem.MolToPDBFile(mol, pdb_path)
-
-        if config["use_mgltools"]:
-            proc = subprocess.run(
-                [MGL_PYTHON, PREPARE_LIGAND, "-l", pdb_path, "-o", pdbqt_path,
-                 "-A", "hydrogens"],
-                capture_output=True, timeout=60)
-        elif config["obabel"]:
-            proc = subprocess.run(
-                [config["obabel"], pdb_path, "-O", pdbqt_path],
-                capture_output=True, timeout=30)
-        else:
-            return name, smiles, None, "no_converter"
+        if not mol_to_pdbqt(mol, pdbqt_path):
+            return name, smiles, None, "pdbqt_failed"
 
         if not os.path.exists(pdbqt_path) or os.path.getsize(pdbqt_path) == 0:
             return name, smiles, None, "conversion_failed"
@@ -155,6 +199,10 @@ def dock_one(item):
                         if score is not None:
                             break
 
+        if score is None and proc.returncode != 0:
+            stderr = proc.stderr[:80] if proc.stderr else "unknown"
+            return name, smiles, None, stderr
+
         return name, smiles, score, "ok" if score is not None else "no_score"
 
     except subprocess.TimeoutExpired:
@@ -162,7 +210,7 @@ def dock_one(item):
     except Exception as e:
         return name, smiles, None, str(e)[:80]
     finally:
-        for f in [pdb_path, pdbqt_path, out_path]:
+        for f in [pdbqt_path, out_path]:
             try:
                 os.unlink(f)
             except OSError:
@@ -178,12 +226,12 @@ def main():
                         help="Receptor .pdbqt file")
     parser.add_argument("--output", "-o", required=True,
                         help="Output prefix (writes _scores.tsv and _top10.smi)")
-    parser.add_argument("--center_x", type=float, default=51.0)
+    parser.add_argument("--center_x", type=float, default=55.0)
     parser.add_argument("--center_y", type=float, default=59.5)
-    parser.add_argument("--center_z", type=float, default=37.4)
-    parser.add_argument("--size_x", type=float, default=20.0)
-    parser.add_argument("--size_y", type=float, default=20.0)
-    parser.add_argument("--size_z", type=float, default=20.0)
+    parser.add_argument("--center_z", type=float, default=35.5)
+    parser.add_argument("--size_x", type=float, default=19.0)
+    parser.add_argument("--size_y", type=float, default=19.0)
+    parser.add_argument("--size_z", type=float, default=19.0)
     parser.add_argument("--exhaustiveness", type=int, default=1,
                         help="Vina exhaustiveness (default: 1 for fast screening)")
     parser.add_argument("--timeout", type=int, default=120,
@@ -208,17 +256,7 @@ def main():
         print("ERROR: No docking executable found (QuickVina2 or Vina)")
         sys.exit(1)
 
-    use_mgltools = os.path.isfile(MGL_PYTHON) and os.path.isfile(PREPARE_LIGAND)
-    obabel_path = find_obabel()
-
-    if use_mgltools:
-        print(f"Using MGLTools prepare_ligand4.py for PDBQT conversion (reliable)")
-    elif obabel_path:
-        print(f"Using obabel: {obabel_path}")
-    else:
-        print("ERROR: No PDBQT converter found (MGLTools or obabel)")
-        sys.exit(1)
-
+    print(f"PDBQT conversion: built-in RDKit (Gasteiger charges + AD4 atom types)")
     print(f"Docking engine: {docking_exe}")
     print(f"Receptor: {args.receptor}")
     print(f"Center: ({args.center_x}, {args.center_y}, {args.center_z})")
@@ -261,9 +299,9 @@ def main():
         nprocs = min(nprocs, len(todo))
         print(f"Using {nprocs} workers")
 
-        est_time = len(todo) * 10 / nprocs
+        est_time = len(todo) * 5 / nprocs
         print(f"Estimated time: {est_time/3600:.1f} hours "
-              f"(~10 sec/compound, {nprocs} workers)")
+              f"(~5 sec/compound, {nprocs} workers)")
         print()
 
         config = {
@@ -277,8 +315,6 @@ def main():
             "exhaustiveness": args.exhaustiveness,
             "timeout": args.timeout,
             "docking_exe": docking_exe,
-            "use_mgltools": use_mgltools,
-            "obabel": obabel_path,
             "tmp_dir": os.path.abspath(tmp_dir),
         }
 
