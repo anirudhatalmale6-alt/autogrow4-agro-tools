@@ -34,6 +34,12 @@ _DEFAULTS = {
     "rot_bonds_enabled": True,
     "rot_bonds_min": 0,
     "rot_bonds_max": 10,
+    "tpsa_enabled": False,
+    "tpsa_min": 0.0,
+    "tpsa_max": 140.0,
+    "aromatic_rings_enabled": False,
+    "aromatic_rings_min": 0,
+    "aromatic_rings_max": 4,
 }
 
 # Also support old config format for backwards compatibility
@@ -119,6 +125,22 @@ class CustomLipinskiFilter(ParentFilter):
             if num_rot_bonds < config.get("rot_bonds_min", 0):
                 return False
             if num_rot_bonds > config.get("rot_bonds_max", 10):
+                return False
+
+        # TPSA check
+        if config.get("tpsa_enabled", False):
+            tpsa = Descriptors.TPSA(mol)
+            if tpsa < config.get("tpsa_min", 0):
+                return False
+            if tpsa > config.get("tpsa_max", 140):
+                return False
+
+        # Aromatic Rings check
+        if config.get("aromatic_rings_enabled", False):
+            num_arom_rings = Descriptors.NumAromaticRings(mol)
+            if num_arom_rings < config.get("aromatic_rings_min", 0):
+                return False
+            if num_arom_rings > config.get("aromatic_rings_max", 4):
                 return False
 
         return True
