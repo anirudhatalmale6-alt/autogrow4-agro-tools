@@ -182,53 +182,51 @@ def _protonate_obabel(input_pdb, ph, output_pdb):
     return output_pdb
 
 
-def protonate_ligand_smiles(smiles, ph, obabel_path, output_dir, name="ligand"):
-    """Protonate ligand SMILES at target pH and generate 3D structure."""
-    sdf_path = os.path.join(output_dir, f"{name}_pH{ph}.sdf")
+def prepare_ligand_pdbqt(crystal_ligand_pdb, smiles, ph, obabel_path, output_dir, name="ligand"):
+    """Prepare ligand PDBQT for docking.
+
+    Primary: use the crystallographic ligand PDB (already has correct 3D coords),
+    add hydrogens at target pH, convert to PDBQT.
+    Fallback: generate 3D from SMILES if crystal approach fails.
+    """
     pdbqt_path = os.path.join(output_dir, f"{name}_pH{ph}.pdbqt")
+    protonated_pdb = os.path.join(output_dir, f"{name}_pH{ph}_H.pdb")
 
-    protonated_smi = smiles
+    # Primary approach: crystal ligand + OpenBabel protonation
+    if crystal_ligand_pdb and os.path.exists(crystal_ligand_pdb):
+        cmd = [obabel_path, crystal_ligand_pdb, "-O", protonated_pdb, "-h", "-p", str(ph)]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
 
-    dimorphite_path = os.path.expanduser(
-        "~/final_project/autogrow4/autogrow/operators/convert_files/"
-        "gypsum_dl/gypsum_dl/Steps/SMILES/dimorphite_dl/dimorphite_dl.py"
-    )
-    if os.path.exists(dimorphite_path):
-        try:
-            result = subprocess.run(
-                [sys.executable, dimorphite_path,
-                 "--smiles", smiles,
-                 "--min_ph", str(ph - 0.2),
-                 "--max_ph", str(ph + 0.2),
-                 "--precision", "0.5"],
-                capture_output=True, text=True, timeout=30
-            )
-            output_lines = [l.strip() for l in result.stdout.strip().split("\n") if l.strip() and not l.startswith("#")]
-            if output_lines:
-                protonated_smi = output_lines[0]
-                print(f"  Dimorphite-DL protonation at pH {ph}: {protonated_smi[:60]}...")
-        except Exception as e:
-            print(f"  Dimorphite-DL failed ({e}), using original SMILES")
-    else:
-        print(f"  Dimorphite-DL not found, using OpenBabel for ligand protonation")
+        if os.path.exists(protonated_pdb) and os.path.getsize(protonated_pdb) > 10:
+            cmd = [obabel_path, protonated_pdb, "-opdbqt", "-O", pdbqt_path]
+            subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if os.path.exists(pdbqt_path) and os.path.getsize(pdbqt_path) > 10:
+                print(f"  Crystal ligand -> PDBQT at pH {ph}: OK")
+                return pdbqt_path
 
-    cmd = [obabel_path, "-:" + protonated_smi, "-osdf", "-O", sdf_path,
-           "--gen3d", "-h", "-p", str(ph)]
-    subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        cmd = [obabel_path, crystal_ligand_pdb, "-opdbqt", "-O", pdbqt_path, "-h"]
+        subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if os.path.exists(pdbqt_path) and os.path.getsize(pdbqt_path) > 10:
+            print(f"  Crystal ligand -> PDBQT (no pH adjust): OK")
+            return pdbqt_path
 
-    if not os.path.exists(sdf_path) or os.path.getsize(sdf_path) < 10:
-        cmd = [obabel_path, "-:" + protonated_smi, "-osdf", "-O", sdf_path, "--gen3d", "-h"]
-        subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    # Fallback: generate 3D from SMILES
+    print(f"  Crystal approach failed, trying SMILES -> 3D...")
+    sdf_path = os.path.join(output_dir, f"{name}_pH{ph}.sdf")
 
-    if not os.path.exists(sdf_path) or os.path.getsize(sdf_path) < 10:
-        print(f"  ERROR: Failed to generate 3D structure for {name}")
-        return None
+    for gen3d_args in [["--gen3d", "-h", "-p", str(ph)],
+                       ["--gen3d", "-h"],
+                       ["--gen3d", "--best", "-h"]]:
+        cmd = [obabel_path, "-:" + smiles, "-osdf", "-O", sdf_path] + gen3d_args
+        subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if os.path.exists(sdf_path) and os.path.getsize(sdf_path) > 10:
+            cmd = [obabel_path, sdf_path, "-opdbqt", "-O", pdbqt_path, "-h"]
+            subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if os.path.exists(pdbqt_path) and os.path.getsize(pdbqt_path) > 10:
+                print(f"  SMILES -> 3D -> PDBQT at pH {ph}: OK")
+                return pdbqt_path
 
-    cmd = [obabel_path, sdf_path, "-opdbqt", "-O", pdbqt_path, "-h"]
-    subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-
-    if os.path.exists(pdbqt_path) and os.path.getsize(pdbqt_path) > 10:
-        return pdbqt_path
+    print(f"  ERROR: All ligand preparation methods failed for {name}")
     return None
 
 
@@ -810,8 +808,8 @@ def main():
                 continue
 
             print(f"  Preparing ligand {ligand_name} at pH {ph}...")
-            ligand_pdbqt = protonate_ligand_smiles(
-                smiles, ph, obabel_path, ph_dir, name=ligand_name
+            ligand_pdbqt = prepare_ligand_pdbqt(
+                ligand_pdb, smiles, ph, obabel_path, ph_dir, name=ligand_name
             )
             if not ligand_pdbqt:
                 print(f"  ERROR: Failed to prepare ligand PDBQT")
