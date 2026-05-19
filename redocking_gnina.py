@@ -205,18 +205,23 @@ def protonate_receptor(receptor_pdb, ph, output_dir):
 
 
 def _pqr_to_pdb(pqr_path, pdb_out):
-    """Convert PQR to PDB format."""
+    """Convert PQR to PDB format with proper element symbols."""
     lines = []
     with open(pqr_path) as f:
         for line in f:
             if line.startswith(("ATOM", "HETATM")):
                 pdb_line = line[:54]
                 pdb_line += "  1.00  0.00"
+                atom_name = line[12:16].strip()
+                element = ""
+                for ch in atom_name:
+                    if ch.isalpha():
+                        element = ch.upper()
+                        if len(atom_name) >= 2 and atom_name[1].isalpha() and atom_name[1].islower():
+                            element = atom_name[0].upper() + atom_name[1].lower()
+                        break
                 pdb_line += " " * max(0, 76 - len(pdb_line))
-                parts = line.split()
-                element = parts[-1] if len(parts) > 0 else ""
-                if len(element) <= 2:
-                    pdb_line += f"  {element:>2}"
+                pdb_line += f"  {element:>2}"
                 lines.append(pdb_line.rstrip() + "\n")
             elif line.startswith(("TER", "END")):
                 lines.append(line)
@@ -318,7 +323,7 @@ def run_gnina_dock(gnina_path, receptor_pdb, ligand_sdf, autobox_ligand,
                    center, size, exhaustiveness, output_dir, tag="",
                    cnn_scoring="rescore", num_modes=9, autobox_add=4.0):
     """Run GNINA docking and return parsed results."""
-    out_sdf = os.path.join(output_dir, f"docked{tag}.sdf.gz")
+    out_sdf = os.path.join(output_dir, f"docked{tag}.sdf")
     log_path = os.path.join(output_dir, f"gnina{tag}.log")
 
     cmd = [gnina_path,
@@ -344,12 +349,20 @@ def run_gnina_dock(gnina_path, receptor_pdb, ligand_sdf, autobox_ligand,
             "--size_z", str(size[2]),
         ])
 
+    print(f"    CMD: {' '.join(cmd)}")
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
         if result.returncode != 0:
-            print(f"  GNINA error: {result.stderr[:300]}")
+            print(f"  GNINA failed (exit {result.returncode}):")
+            print(f"  STDERR: {result.stderr[:500]}")
+            print(f"  STDOUT: {result.stdout[:500]}")
+            return [], None
     except subprocess.TimeoutExpired:
         print(f"  GNINA timed out")
+        return [], None
+
+    if not os.path.exists(out_sdf) or os.path.getsize(out_sdf) < 10:
+        print(f"  GNINA produced no output file")
         return [], None
 
     poses = _parse_gnina_log(log_path)
@@ -478,33 +491,64 @@ def compute_pose_rmsds(docked_file, crystal_pdb, obabel_path):
             else:
                 unsdf = docked_file
 
+            if not os.path.exists(unsdf) or os.path.getsize(unsdf) < 10:
+                print(f"    WARNING: Docked SDF is empty/missing, skipping RMSD")
+                return []
+
             if HAS_RDKIT:
-                supplier = Chem.SDMolSupplier(unsdf, removeHs=True)
+                try:
+                    supplier = Chem.SDMolSupplier(unsdf, removeHs=True)
+                except OSError as e:
+                    print(f"    WARNING: Cannot read docked SDF ({e}), trying OpenBabel split")
+                    supplier = None
+
                 ref_mol = Chem.MolFromPDBFile(crystal_pdb, removeHs=True)
-                for i, mol in enumerate(supplier):
-                    if mol is None:
-                        rmsds.append(999.0)
-                        continue
-                    try:
-                        rmsd = rdMolAlign.CalcRMS(mol, ref_mol)
-                        rmsds.append(rmsd)
-                    except Exception:
-                        coords = mol.GetConformer().GetPositions()
+
+                if supplier is not None:
+                    for i, mol in enumerate(supplier):
+                        if mol is None:
+                            rmsds.append(999.0)
+                            continue
+                        try:
+                            if ref_mol is not None:
+                                rmsd = rdMolAlign.CalcRMS(mol, ref_mol)
+                            else:
+                                coords = mol.GetConformer().GetPositions()
+                                rmsd = calculate_rmsd_coords(crystal_coords, coords)
+                            rmsds.append(rmsd)
+                        except Exception:
+                            try:
+                                coords = mol.GetConformer().GetPositions()
+                                rmsd = calculate_rmsd_coords(crystal_coords, coords)
+                                rmsds.append(rmsd)
+                            except Exception:
+                                rmsds.append(999.0)
+                else:
+                    if obabel_path:
+                        split_dir = os.path.join(tmp_dir, "split")
+                        os.makedirs(split_dir, exist_ok=True)
+                        cmd = [obabel_path, unsdf, "-osdf", "-O",
+                               os.path.join(split_dir, "pose_.sdf"), "-m"]
+                        subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                        import glob
+                        pose_files = sorted(glob.glob(os.path.join(split_dir, "pose_*.sdf")))
+                        for pf in pose_files:
+                            coords = extract_heavy_coords_sdf(pf)
+                            rmsd = calculate_rmsd_coords(crystal_coords, coords)
+                            rmsds.append(rmsd)
+            else:
+                if obabel_path:
+                    split_dir = os.path.join(tmp_dir, "split")
+                    os.makedirs(split_dir, exist_ok=True)
+                    cmd = [obabel_path, unsdf, "-osdf", "-O",
+                           os.path.join(split_dir, "pose_.sdf"), "-m"]
+                    subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                    import glob
+                    pose_files = sorted(glob.glob(os.path.join(split_dir, "pose_*.sdf")))
+                    for pf in pose_files:
+                        coords = extract_heavy_coords_sdf(pf)
                         rmsd = calculate_rmsd_coords(crystal_coords, coords)
                         rmsds.append(rmsd)
-            else:
-                split_dir = os.path.join(tmp_dir, "split")
-                os.makedirs(split_dir, exist_ok=True)
-                cmd = [obabel_path, unsdf, "-osdf", "-O",
-                       os.path.join(split_dir, "pose_.sdf"), "-m"]
-                subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-
-                import glob
-                pose_files = sorted(glob.glob(os.path.join(split_dir, "pose_*.sdf")))
-                for pf in pose_files:
-                    coords = extract_heavy_coords_sdf(pf)
-                    rmsd = calculate_rmsd_coords(crystal_coords, coords)
-                    rmsds.append(rmsd)
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
