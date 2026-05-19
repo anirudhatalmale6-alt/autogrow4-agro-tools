@@ -30,19 +30,17 @@ with open(RESULTS_JSON) as f:
 crystal_conditions = [c for c in all_results if c.get("ligand_source") == "crystal"]
 
 display(HTML("""
-<div style='background:#f0f8f0; color:#000000; padding:15px; border-radius:8px; margin-bottom:15px;
-            border:2px solid #228B22;'>
-    <h2 style='margin:0 0 10px 0; color:#006400;'>GNINA Redocking Pose Validation</h2>
-    <p style='margin:5px 0; color:#333;'>Comparing top GNINA docked pose against crystallographic ligand position.</p>
-    <p style='margin:5px 0; color:#333; font-size:1.1em;'>
-        <span style='color:#228B22; font-size:1.3em;'>&#9632;</span> Crystal ligand (reference) &nbsp;&nbsp;
-        <span style='color:#ff44aa; font-size:1.3em;'>&#9632;</span> GNINA docked pose &nbsp;&nbsp;
-        <span style='color:#666; font-size:1.3em;'>&#9632;</span> Active site residues (element coloring)
-    </p>
-    <p style='margin:5px 0; font-size:0.95em; color:#555;'>
-        Active site: """ + ", ".join(str(r) for r in ACTIVE_SITE) + """
-    </p>
-</div>
+<pre style='background:#ffffff !important; color:#000000 !important; padding:15px; border-radius:8px;
+            margin-bottom:15px; border:2px solid #228B22; font-family:monospace; font-size:14px;
+            line-height:1.6; white-space:pre;'><span style='color:#006400 !important; font-size:22px; font-weight:bold;'>GNINA Redocking Pose Validation</span>
+
+Comparing top GNINA docked pose against crystallographic ligand position.
+
+  <span style='color:#228B22 !important; font-size:16px;'>&#9632;</span> Crystal ligand (reference)
+  <span style='color:#ff44aa !important; font-size:16px;'>&#9632;</span> GNINA docked pose
+  <span style='color:#888 !important; font-size:16px;'>&#9632;</span> Active site residues (element coloring)
+
+Active site: """ + ", ".join(str(r) for r in ACTIVE_SITE) + """</pre>
 """))
 
 print(f"Loaded {len(crystal_conditions)} conditions from {RESULTS_JSON}\n")
@@ -120,50 +118,48 @@ for cond in crystal_conditions:
         r_rmsd_s = f"{r_rmsd:.3f}"
         r_vina = r.get("best_vina_score")
         r_vina_s = f"{r_vina:.2f}" if r_vina is not None else "N/A"
-        is_best = " &larr; BEST" if r is best else ""
+        is_best = " BEST" if r is best else ""
         if r.get("method") == "autobox":
             r_dim = f"Autobox pad {r['padding']:.0f}A"
         else:
             r_dim = f"{r.get('size_x', 0):.0f}x{r.get('size_y', 0):.0f}x{r.get('size_z', 0):.0f} A"
-        bold = "font-weight:bold; background:#e6ffe6;" if r is best else ""
-        best_color = "color:#cc0000; font-weight:bold;" if r is best else "color:#000;"
-        sweep_rows += (f"<tr style='{bold}'>"
-                       f"<td style='padding:2px 10px; color:#000;'>{r_dim}</td>"
-                       f"<td style='padding:2px 10px; {best_color}'>{r_rmsd_s}</td>"
-                       f"<td style='padding:2px 10px; color:#000;'>{r_vina_s}</td>"
-                       f"<td style='padding:2px 10px; color:#006400; font-weight:bold;'>{is_best}</td></tr>")
+        bg = "background:#d4edda !important;" if r is best else "background:#ffffff !important;"
+        weight = "font-weight:bold;" if r is best else ""
+        sweep_rows += (f"<tr style='{bg} {weight}'>"
+                       f"<td style='padding:3px 12px; color:#000 !important; background:inherit;'>{r_dim}</td>"
+                       f"<td style='padding:3px 12px; color:#000 !important; background:inherit;'>{r_rmsd_s}</td>"
+                       f"<td style='padding:3px 12px; color:#000 !important; background:inherit;'>{r_vina_s}</td>"
+                       f"<td style='padding:3px 12px; color:#006400 !important; background:inherit; font-weight:bold;'>{is_best}</td></tr>")
+
+    info_text = f"""
+    <pre style='background:#ffffff !important; color:#000000 !important; padding:16px; margin:15px 0 5px 0;
+                border-radius:8px; border:2px solid #228B22; border-left:5px solid #228B22;
+                font-family:monospace; font-size:14px; line-height:1.8; white-space:pre;'><span style='color:#006400 !important; font-size:20px; font-weight:bold;'>{pdb_id} | {lig_name} | pH {ph}</span>
+
+  RMSD vs Crystal:   <span style='color:#cc0000 !important; font-weight:bold; font-size:16px;'>{rmsd_s} A</span>
+  Vina Score:        {vina_s} kcal/mol
+  CNN Score:         {cnn_s}
+  Best Method:       {method_s}
+  Box Dimensions:    {dim_s}
+  Box Center:        ({cx:.2f}, {cy:.2f}, {cz:.2f})</pre>"""
+
+    display(HTML(info_text))
 
     display(HTML(f"""
-    <div style='background:#ffffff; color:#000000; padding:16px; margin:15px 0 5px 0;
-                border-radius:8px; border:2px solid #228B22; border-left:5px solid #228B22;'>
-        <h2 style='margin:0 0 12px 0; color:#006400; font-size:1.6em;'>{pdb_id} | {lig_name} | pH {ph}</h2>
-        <table style='margin:8px 0; color:#000000; font-size:1.15em; border-collapse:collapse;'>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>RMSD vs Crystal:</td>
-                <td style='color:#cc0000; font-weight:bold; font-size:1.2em;'>{rmsd_s} A</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>Vina Score:</td>
-                <td style='color:#000;'>{vina_s} kcal/mol</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>CNN Score:</td>
-                <td style='color:#000;'>{cnn_s}</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>Best Method:</td>
-                <td style='color:#000;'>{method_s}</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>Box Dimensions:</td>
-                <td style='color:#000;'>{dim_s}</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>Box Center:</td>
-                <td style='color:#000;'>({cx:.2f}, {cy:.2f}, {cz:.2f})</td></tr>
+    <details style='margin:0 0 5px 0;'>
+        <summary style='cursor:pointer; color:#0066cc !important; font-size:14px; font-weight:bold;
+                        padding:6px; background:#f8f8f8 !important; border:1px solid #ccc; border-radius:4px;'>
+            All configurations tested (click to expand)</summary>
+        <table style='margin:8px 0; font-size:13px; border-collapse:collapse;
+                      background:#ffffff !important; border:1px solid #ccc;'>
+            <tr style='background:#e8e8e8 !important; border-bottom:2px solid #999;'>
+                <th style='padding:5px 12px; text-align:left; color:#000 !important; background:#e8e8e8 !important;'>Configuration</th>
+                <th style='padding:5px 12px; text-align:left; color:#000 !important; background:#e8e8e8 !important;'>RMSD (A)</th>
+                <th style='padding:5px 12px; text-align:left; color:#000 !important; background:#e8e8e8 !important;'>Vina (kcal/mol)</th>
+                <th style='padding:5px 12px; color:#000 !important; background:#e8e8e8 !important;'></th></tr>
+            {sweep_rows}
         </table>
-        <details style='margin-top:10px;'>
-            <summary style='cursor:pointer; color:#0066cc; font-size:1.05em; font-weight:bold;'>
-                All configurations tested (click to expand)</summary>
-            <table style='margin:8px 0; color:#000000; font-size:1.0em; border-collapse:collapse;'>
-                <tr style='border-bottom:2px solid #999;'>
-                    <th style='padding:4px 10px; text-align:left; color:#333;'>Configuration</th>
-                    <th style='padding:4px 10px; text-align:left; color:#333;'>RMSD (A)</th>
-                    <th style='padding:4px 10px; text-align:left; color:#333;'>Vina (kcal/mol)</th>
-                    <th style='padding:4px 10px;'></th></tr>
-                {sweep_rows}
-            </table>
-        </details>
-    </div>
+    </details>
     """))
 
     view = nv.NGLWidget()
@@ -214,11 +210,7 @@ for cond in crystal_conditions:
     print(f"  Rotate to inspect overlap. Green = crystal, Magenta = docked.\n")
 
 display(HTML("""
-<div style='background:#f0f8f0; color:#333; padding:12px; border-radius:8px; margin-top:15px;
-            font-size:1.0em; border:1px solid #228B22;'>
-    <b>Interpretation:</b> If green and magenta overlap closely, GNINA successfully
-    reproduced the crystallographic binding mode. Sub-0.5 A RMSD means the poses
-    are virtually identical - the CNN scoring correctly penalizes flipped orientations
-    that Vina scored identically.
-</div>
+<pre style='background:#ffffff !important; color:#000000 !important; padding:12px; border-radius:8px;
+            margin-top:15px; font-size:13px; border:1px solid #228B22; font-family:monospace;
+            line-height:1.5; white-space:pre-wrap;'>Interpretation: If green and magenta overlap closely, GNINA successfully reproduced the crystallographic binding mode. Sub-0.5 A RMSD means the poses are virtually identical - the CNN scoring correctly penalizes flipped orientations that Vina scored identically.</pre>
 """))
