@@ -91,28 +91,76 @@ for cond in crystal_conditions:
         continue
 
     rmsd_s = f"{rmsd:.3f}" if isinstance(rmsd, float) else str(rmsd)
-    vina_s = f"{vina:.2f} kcal/mol" if vina is not None else "N/A"
+    vina_s = f"{vina:.2f}" if vina is not None else "N/A"
     cnn_s = f"{cnn:.4f}" if cnn is not None else "N/A"
+    center = cond.get("center", [0, 0, 0])
+    cx, cy, cz = center[0], center[1], center[2]
 
     if best.get("method") == "autobox":
-        method_s = f"autobox padding = {best['padding']:.0f} A"
+        sx = best.get("size_x")
+        if sx is not None:
+            dim_s = f"{sx:.1f} x {best['size_y']:.1f} x {best['size_z']:.1f}"
+        else:
+            p = best.get("padding", 4)
+            dim_s = f"autobox (ligand + {p:.0f} A padding each side)"
+        method_s = f"Autobox, padding = {best['padding']:.0f} A"
     else:
-        method_s = f"manual box = {best.get('size_x', '?')} A"
+        sx = best.get("size_x", 0)
+        sy = best.get("size_y", 0)
+        sz = best.get("size_z", 0)
+        dim_s = f"{sx:.1f} x {sy:.1f} x {sz:.1f} A"
+        method_s = f"Manual box"
+
+    sweep_rows = ""
+    for r in sorted(sweep, key=lambda x: x.get("best_rmsd", 999)):
+        r_rmsd = r.get("best_rmsd", 999)
+        if r_rmsd >= 999:
+            continue
+        r_rmsd_s = f"{r_rmsd:.3f}"
+        r_vina = r.get("best_vina_score")
+        r_vina_s = f"{r_vina:.2f}" if r_vina is not None else "N/A"
+        is_best = " &larr; BEST" if r is best else ""
+        if r.get("method") == "autobox":
+            r_dim = f"Autobox pad {r['padding']:.0f}A"
+        else:
+            r_dim = f"{r.get('size_x', 0):.0f}x{r.get('size_y', 0):.0f}x{r.get('size_z', 0):.0f} A"
+        bold = "font-weight:bold; color:#ffcc00;" if r is best else ""
+        sweep_rows += (f"<tr style='{bold}'>"
+                       f"<td style='padding:2px 10px;'>{r_dim}</td>"
+                       f"<td style='padding:2px 10px;'>{r_rmsd_s}</td>"
+                       f"<td style='padding:2px 10px;'>{r_vina_s}</td>"
+                       f"<td style='padding:2px 10px; color:#ffcc00;'>{is_best}</td></tr>")
 
     display(HTML(f"""
-    <div style='background:#0d1117; color:#e0e0e0; padding:12px; margin:15px 0 5px 0;
-                border-radius:8px; border-left:4px solid #00ff88;'>
-        <h3 style='margin:0; color:#00ff88;'>{pdb_id} | {lig_name} | pH {ph}</h3>
-        <table style='margin:8px 0; color:#e0e0e0;'>
-            <tr><td style='padding:2px 15px 2px 0;'>RMSD vs Crystal:</td>
-                <td style='color:#ffcc00; font-weight:bold;'>{rmsd_s} A</td></tr>
-            <tr><td style='padding:2px 15px 2px 0;'>Vina Score:</td>
-                <td>{vina_s}</td></tr>
-            <tr><td style='padding:2px 15px 2px 0;'>CNN Score:</td>
+    <div style='background:#0d1117; color:#f0f0f0; padding:16px; margin:15px 0 5px 0;
+                border-radius:8px; border-left:5px solid #00ff88;'>
+        <h2 style='margin:0 0 12px 0; color:#00ff88; font-size:1.6em;'>{pdb_id} | {lig_name} | pH {ph}</h2>
+        <table style='margin:8px 0; color:#f0f0f0; font-size:1.15em; border-collapse:collapse;'>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>RMSD vs Crystal:</td>
+                <td style='color:#ffcc00; font-weight:bold; font-size:1.2em;'>{rmsd_s} A</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>Vina Score:</td>
+                <td>{vina_s} kcal/mol</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>CNN Score:</td>
                 <td>{cnn_s}</td></tr>
-            <tr><td style='padding:2px 15px 2px 0;'>Best Config:</td>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>Best Method:</td>
                 <td>{method_s}</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>Box Dimensions:</td>
+                <td>{dim_s}</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>Box Center:</td>
+                <td>({cx:.2f}, {cy:.2f}, {cz:.2f})</td></tr>
         </table>
+        <details style='margin-top:10px;'>
+            <summary style='cursor:pointer; color:#88ccff; font-size:1.05em; font-weight:bold;'>
+                All configurations tested (click to expand)</summary>
+            <table style='margin:8px 0; color:#d0d0d0; font-size:1.0em; border-collapse:collapse;'>
+                <tr style='border-bottom:1px solid #444;'>
+                    <th style='padding:4px 10px; text-align:left;'>Configuration</th>
+                    <th style='padding:4px 10px; text-align:left;'>RMSD (A)</th>
+                    <th style='padding:4px 10px; text-align:left;'>Vina (kcal/mol)</th>
+                    <th style='padding:4px 10px;'></th></tr>
+                {sweep_rows}
+            </table>
+        </details>
     </div>
     """))
 
