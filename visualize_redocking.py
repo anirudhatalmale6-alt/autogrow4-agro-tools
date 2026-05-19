@@ -30,15 +30,16 @@ with open(RESULTS_JSON) as f:
 crystal_conditions = [c for c in all_results if c.get("ligand_source") == "crystal"]
 
 display(HTML("""
-<div style='background:#1a1a2e; color:#e0e0e0; padding:15px; border-radius:8px; margin-bottom:15px;'>
-    <h2 style='margin:0 0 10px 0; color:#00ff88;'>GNINA Redocking Pose Validation</h2>
-    <p style='margin:5px 0;'>Comparing top GNINA docked pose against crystallographic ligand position.</p>
-    <p style='margin:5px 0;'>
-        <span style='color:#00ff88; font-size:1.3em;'>&#9632;</span> Crystal ligand (reference) &nbsp;&nbsp;
+<div style='background:#f0f8f0; color:#000000; padding:15px; border-radius:8px; margin-bottom:15px;
+            border:2px solid #228B22;'>
+    <h2 style='margin:0 0 10px 0; color:#006400;'>GNINA Redocking Pose Validation</h2>
+    <p style='margin:5px 0; color:#333;'>Comparing top GNINA docked pose against crystallographic ligand position.</p>
+    <p style='margin:5px 0; color:#333; font-size:1.1em;'>
+        <span style='color:#228B22; font-size:1.3em;'>&#9632;</span> Crystal ligand (reference) &nbsp;&nbsp;
         <span style='color:#ff44aa; font-size:1.3em;'>&#9632;</span> GNINA docked pose &nbsp;&nbsp;
-        <span style='color:#88ccff; font-size:1.3em;'>&#9632;</span> Active site residues (element coloring)
+        <span style='color:#666; font-size:1.3em;'>&#9632;</span> Active site residues (element coloring)
     </p>
-    <p style='margin:5px 0; font-size:0.9em; color:#aaa;'>
+    <p style='margin:5px 0; font-size:0.95em; color:#555;'>
         Active site: """ + ", ".join(str(r) for r in ACTIVE_SITE) + """
     </p>
 </div>
@@ -124,39 +125,40 @@ for cond in crystal_conditions:
             r_dim = f"Autobox pad {r['padding']:.0f}A"
         else:
             r_dim = f"{r.get('size_x', 0):.0f}x{r.get('size_y', 0):.0f}x{r.get('size_z', 0):.0f} A"
-        bold = "font-weight:bold; color:#ffcc00;" if r is best else ""
+        bold = "font-weight:bold; background:#e6ffe6;" if r is best else ""
+        best_color = "color:#cc0000; font-weight:bold;" if r is best else "color:#000;"
         sweep_rows += (f"<tr style='{bold}'>"
-                       f"<td style='padding:2px 10px;'>{r_dim}</td>"
-                       f"<td style='padding:2px 10px;'>{r_rmsd_s}</td>"
-                       f"<td style='padding:2px 10px;'>{r_vina_s}</td>"
-                       f"<td style='padding:2px 10px; color:#ffcc00;'>{is_best}</td></tr>")
+                       f"<td style='padding:2px 10px; color:#000;'>{r_dim}</td>"
+                       f"<td style='padding:2px 10px; {best_color}'>{r_rmsd_s}</td>"
+                       f"<td style='padding:2px 10px; color:#000;'>{r_vina_s}</td>"
+                       f"<td style='padding:2px 10px; color:#006400; font-weight:bold;'>{is_best}</td></tr>")
 
     display(HTML(f"""
-    <div style='background:#0d1117; color:#f0f0f0; padding:16px; margin:15px 0 5px 0;
-                border-radius:8px; border-left:5px solid #00ff88;'>
-        <h2 style='margin:0 0 12px 0; color:#00ff88; font-size:1.6em;'>{pdb_id} | {lig_name} | pH {ph}</h2>
-        <table style='margin:8px 0; color:#f0f0f0; font-size:1.15em; border-collapse:collapse;'>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>RMSD vs Crystal:</td>
-                <td style='color:#ffcc00; font-weight:bold; font-size:1.2em;'>{rmsd_s} A</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>Vina Score:</td>
-                <td>{vina_s} kcal/mol</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>CNN Score:</td>
-                <td>{cnn_s}</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>Best Method:</td>
-                <td>{method_s}</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>Box Dimensions:</td>
-                <td>{dim_s}</td></tr>
-            <tr><td style='padding:4px 20px 4px 0; font-weight:bold;'>Box Center:</td>
-                <td>({cx:.2f}, {cy:.2f}, {cz:.2f})</td></tr>
+    <div style='background:#ffffff; color:#000000; padding:16px; margin:15px 0 5px 0;
+                border-radius:8px; border:2px solid #228B22; border-left:5px solid #228B22;'>
+        <h2 style='margin:0 0 12px 0; color:#006400; font-size:1.6em;'>{pdb_id} | {lig_name} | pH {ph}</h2>
+        <table style='margin:8px 0; color:#000000; font-size:1.15em; border-collapse:collapse;'>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>RMSD vs Crystal:</td>
+                <td style='color:#cc0000; font-weight:bold; font-size:1.2em;'>{rmsd_s} A</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>Vina Score:</td>
+                <td style='color:#000;'>{vina_s} kcal/mol</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>CNN Score:</td>
+                <td style='color:#000;'>{cnn_s}</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>Best Method:</td>
+                <td style='color:#000;'>{method_s}</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>Box Dimensions:</td>
+                <td style='color:#000;'>{dim_s}</td></tr>
+            <tr><td style='padding:4px 20px 4px 0; font-weight:bold; color:#333;'>Box Center:</td>
+                <td style='color:#000;'>({cx:.2f}, {cy:.2f}, {cz:.2f})</td></tr>
         </table>
         <details style='margin-top:10px;'>
-            <summary style='cursor:pointer; color:#88ccff; font-size:1.05em; font-weight:bold;'>
+            <summary style='cursor:pointer; color:#0066cc; font-size:1.05em; font-weight:bold;'>
                 All configurations tested (click to expand)</summary>
-            <table style='margin:8px 0; color:#d0d0d0; font-size:1.0em; border-collapse:collapse;'>
-                <tr style='border-bottom:1px solid #444;'>
-                    <th style='padding:4px 10px; text-align:left;'>Configuration</th>
-                    <th style='padding:4px 10px; text-align:left;'>RMSD (A)</th>
-                    <th style='padding:4px 10px; text-align:left;'>Vina (kcal/mol)</th>
+            <table style='margin:8px 0; color:#000000; font-size:1.0em; border-collapse:collapse;'>
+                <tr style='border-bottom:2px solid #999;'>
+                    <th style='padding:4px 10px; text-align:left; color:#333;'>Configuration</th>
+                    <th style='padding:4px 10px; text-align:left; color:#333;'>RMSD (A)</th>
+                    <th style='padding:4px 10px; text-align:left; color:#333;'>Vina (kcal/mol)</th>
                     <th style='padding:4px 10px;'></th></tr>
                 {sweep_rows}
             </table>
@@ -212,8 +214,8 @@ for cond in crystal_conditions:
     print(f"  Rotate to inspect overlap. Green = crystal, Magenta = docked.\n")
 
 display(HTML("""
-<div style='background:#1a1a2e; color:#aaa; padding:10px; border-radius:8px; margin-top:15px;
-            font-size:0.9em;'>
+<div style='background:#f0f8f0; color:#333; padding:12px; border-radius:8px; margin-top:15px;
+            font-size:1.0em; border:1px solid #228B22;'>
     <b>Interpretation:</b> If green and magenta overlap closely, GNINA successfully
     reproduced the crystallographic binding mode. Sub-0.5 A RMSD means the poses
     are virtually identical - the CNN scoring correctly penalizes flipped orientations
