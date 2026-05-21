@@ -536,6 +536,190 @@ def analyze_bridge4(structures, chains):
     return results
 
 
+PHARMACOPHORE_ATOMS = {
+    "7-COOH": ["O71", "O72"],
+    "3-OH": ["O31"],
+    "13-OH": ["O13"],
+    "lactone": ["O91", "O92"],
+}
+
+PHARMACOPHORE_RESIDUE_PARTNERS = {
+    "7-COOH": [116, 191],
+    "3-OH": [127],
+    "13-OH": [238],
+}
+
+
+def get_ligand_pharmacophore_atom(chain, lig_name, atom_names):
+    for res in chain:
+        if res.get_resname() == lig_name and res.id[0] != " ":
+            for aname in atom_names:
+                if aname in res:
+                    return res[aname]
+    return None
+
+
+def get_waters_near_atom(atom, all_waters, cutoff):
+    atom_coord = atom.get_vector().get_array()
+    nearby = []
+    for wat in all_waters:
+        wat_o = None
+        for a in wat.get_atoms():
+            if a.element == "O":
+                wat_o = a
+                break
+        if wat_o is None:
+            continue
+        dist = np.linalg.norm(wat_o.get_vector().get_array() - atom_coord)
+        if dist <= cutoff:
+            nearby.append({
+                "coord": wat_o.get_vector().get_array(),
+                "dist": dist,
+                "resid": wat.id[1],
+                "bfactor": wat_o.get_bfactor(),
+            })
+    return sorted(nearby, key=lambda w: w["dist"])
+
+
+def analyze_pharmacophore_waters(structures, chains):
+    print(f"\n{'=' * 70}")
+    print("Step 3b: Pharmacophore-specific water network (Murase et al.)")
+    print(f"{'=' * 70}")
+    print("  Mapping waters near GA functional groups and their")
+    print("  partner residues to reconstruct the 6-water network.\n")
+
+    results = {}
+
+    for pdb_id in PDB_IDS:
+        chain = chains[pdb_id]
+        all_waters = get_all_chain_a_waters(structures[pdb_id])
+        lig_name = LIGAND_OF[pdb_id]
+        species = SPECIES[pdb_id]
+
+        print(f"  {pdb_id} ({species}, {lig_name}):")
+        pdb_results = {}
+
+        for pharm_name, atom_names in PHARMACOPHORE_ATOMS.items():
+            if pharm_name == "13-OH" and lig_name == "GA4":
+                print(f"    {pharm_name}: N/A (GA4 lacks 13-OH)")
+                pdb_results[pharm_name] = {"present": False}
+                continue
+
+            atoms_found = []
+            for aname in atom_names:
+                atom = get_ligand_pharmacophore_atom(chain, lig_name, [aname])
+                if atom:
+                    atoms_found.append(atom)
+
+            if not atoms_found:
+                print(f"    {pharm_name}: atoms not found")
+                pdb_results[pharm_name] = {"present": False}
+                continue
+
+            all_nearby_waters = []
+            for atom in atoms_found:
+                waters = get_waters_near_atom(atom, all_waters, HBOND_DIST)
+                for w in waters:
+                    if w["resid"] not in set(ww["resid"] for ww in all_nearby_waters):
+                        all_nearby_waters.append(w)
+
+            partner_resnums = PHARMACOPHORE_RESIDUE_PARTNERS.get(pharm_name, [])
+            partner_connections = {}
+            for w in all_nearby_waters:
+                w_coord = w["coord"]
+                for arab_resnum in partner_resnums:
+                    resnum = map_residue(arab_resnum, pdb_id)
+                    res = get_residue(chain, resnum)
+                    if res is None:
+                        continue
+                    min_d = min(
+                        np.linalg.norm(w_coord - a.get_vector().get_array())
+                        for a in res.get_atoms()
+                    )
+                    if min_d <= WATER_SEARCH_RADIUS:
+                        key = f"HOH_{w['resid']}"
+                        if key not in partner_connections:
+                            partner_connections[key] = {
+                                "water_resid": w["resid"],
+                                "water_coord": w["coord"].tolist(),
+                                "dist_to_pharmacophore": w["dist"],
+                                "bfactor": w["bfactor"],
+                                "residue_contacts": [],
+                            }
+                        partner_connections[key]["residue_contacts"].append({
+                            "residue": resnum,
+                            "dist": min_d,
+                        })
+
+            atom_name_str = "/".join(atom_names)
+            print(f"    {pharm_name} ({atom_name_str}): "
+                  f"{len(all_nearby_waters)} water(s) within {HBOND_DIST} A")
+
+            for key, conn in partner_connections.items():
+                contacts = ", ".join(
+                    f"res{c['residue']}={c['dist']:.2f}A"
+                    for c in conn["residue_contacts"]
+                )
+                print(f"      HOH {conn['water_resid']}: "
+                      f"d(pharm)={conn['dist_to_pharmacophore']:.2f}, "
+                      f"contacts=[{contacts}], "
+                      f"B={conn['bfactor']:.1f}")
+
+            bridging_count = len(partner_connections)
+            if not partner_connections and all_nearby_waters:
+                for w in all_nearby_waters:
+                    print(f"      HOH {w['resid']}: "
+                          f"d(pharm)={w['dist']:.2f}, "
+                          f"no residue contact within {WATER_SEARCH_RADIUS}A, "
+                          f"B={w['bfactor']:.1f}")
+
+            pdb_results[pharm_name] = {
+                "present": True,
+                "n_waters": len(all_nearby_waters),
+                "n_bridging": bridging_count,
+                "details": list(partner_connections.values()),
+                "all_waters": [{
+                    "resid": w["resid"],
+                    "coord": w["coord"].tolist(),
+                    "dist": w["dist"],
+                    "bfactor": w["bfactor"],
+                } for w in all_nearby_waters],
+            }
+
+        sequestered = set()
+        for pharm_name, pr in pdb_results.items():
+            if isinstance(pr, dict) and pr.get("present"):
+                for w in pr.get("all_waters", []):
+                    sequestered.add(w["resid"])
+
+        print(f"    --- Total sequestered waters near pharmacophores: "
+              f"{len(sequestered)} (literature: 6)")
+
+        results[pdb_id] = {
+            "pharmacophores": pdb_results,
+            "n_sequestered": len(sequestered),
+            "sequestered_ids": sorted(sequestered),
+        }
+
+    print(f"\n  PHARMACOPHORE WATER NETWORK SUMMARY:")
+    print(f"  {'PDB':>5s} {'7-COOH':>8s} {'3-OH':>6s} {'13-OH':>7s} "
+          f"{'Lactone':>8s} {'Total':>6s}")
+    for pdb_id in PDB_IDS:
+        r = results[pdb_id]
+        cols = []
+        for ph in ["7-COOH", "3-OH", "13-OH", "lactone"]:
+            pr = r["pharmacophores"].get(ph, {})
+            if not pr.get("present"):
+                cols.append("--")
+            else:
+                cols.append(str(pr.get("n_waters", 0)))
+        print(f"  {pdb_id:>5s} {cols[0]:>8s} {cols[1]:>6s} "
+              f"{cols[2]:>7s} {cols[3]:>8s} "
+              f"{r['n_sequestered']:>6d}")
+
+    return results
+
+
 def main():
     print("=" * 70)
     print("CONSERVED WATER MAPPING - Task 5")
@@ -594,6 +778,8 @@ def main():
     bridge2 = analyze_bridge2(structures, chains)
     bridge3 = analyze_bridge3(structures, chains)
     bridge4 = analyze_bridge4(structures, chains)
+
+    pharm_waters = analyze_pharmacophore_waters(structures, chains)
 
     print(f"\n{'=' * 70}")
     print("Step 4: Global conserved water clustering...")
@@ -702,6 +888,9 @@ def main():
             for k, v in bridge3.items()
         },
         "bridge4_asp289": bridge4,
+        "pharmacophore_waters": {
+            k: v for k, v in pharm_waters.items()
+        },
         "conserved_clusters": [{
             "center": c["center"].tolist(),
             "n_structures": c["n_structures"],
@@ -732,7 +921,7 @@ def main():
 
     report_path = os.path.join(OUTPUT_DIR, "water_mapping_report.txt")
     _write_report(report_path, bridge1, bridge2, bridge3, bridge4,
-                  conserved, fully_conserved, pocket_waters)
+                  conserved, fully_conserved, pocket_waters, pharm_waters)
     print(f"Report: {report_path}")
 
     try:
@@ -750,7 +939,7 @@ def main():
 
 
 def _write_report(path, b1, b2, b3, b4, conserved, fully_conserved,
-                  pocket_waters):
+                  pocket_waters, pharm_waters=None):
     with open(path, "w") as f:
         f.write("CONSERVED WATER MAPPING - Task 5\n")
         f.write(f"{'=' * 60}\n\n")
@@ -795,6 +984,36 @@ def _write_report(path, b1, b2, b3, b4, conserved, fully_conserved,
             for d in r["details"]:
                 f.write(f"    HOH {d['resid']}: d={d['dist']:.2f}, "
                         f"B={d['bfactor']:.1f}\n")
+
+        if pharm_waters:
+            f.write(f"\n\nPharmacophore-Specific Water Network "
+                    f"(Murase et al. 2008):\n")
+            f.write(f"{'=' * 60}\n\n")
+            f.write("Atom mapping: 7-COOH=O71/O72, 3-OH=O31, "
+                    "13-OH=O13, Lactone=O91/O92\n\n")
+            for pdb_id in PDB_IDS:
+                r = pharm_waters[pdb_id]
+                lig = LIGAND_OF[pdb_id]
+                f.write(f"  {pdb_id} ({SPECIES[pdb_id]}, {lig}):\n")
+                for ph_name in ["7-COOH", "3-OH", "13-OH", "lactone"]:
+                    pr = r["pharmacophores"].get(ph_name, {})
+                    if not pr.get("present"):
+                        f.write(f"    {ph_name}: N/A\n")
+                        continue
+                    f.write(f"    {ph_name}: {pr['n_waters']} water(s), "
+                            f"{pr['n_bridging']} bridging to partner "
+                            f"residue(s)\n")
+                    for d in pr.get("details", []):
+                        contacts = ", ".join(
+                            f"res{c['residue']}={c['dist']:.2f}A"
+                            for c in d.get("residue_contacts", [])
+                        )
+                        f.write(f"      HOH {d['water_resid']}: "
+                                f"d(pharm)={d['dist_to_pharmacophore']:.2f}, "
+                                f"contacts=[{contacts}], "
+                                f"B={d['bfactor']:.1f}\n")
+                f.write(f"    Total sequestered: "
+                        f"{r['n_sequestered']} waters\n\n")
 
         f.write(f"\n\nGlobal Conserved Water Positions:\n")
         f.write(f"{'=' * 60}\n\n")
