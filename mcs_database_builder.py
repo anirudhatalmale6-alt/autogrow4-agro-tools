@@ -69,11 +69,11 @@ MCS_SCAFFOLDS = {
         "description": "Phthalimide Core - cheap bulk synthesis, imide N click handle",
     },
     "saccharin": {
-        "smarts": "O=C1NS(=O)(=O)c2ccccc21",
+        "smarts": "O=S1(=O)Nc2ccccc21",
         "description": "Saccharin Core (benzosulfonimide) - extreme UV stability",
     },
     "quinazolinone": {
-        "smarts": "O=c1[nH]cnc2ccccc12",
+        "smarts": "O=c1cnc2ccccc2[nH]1",
         "description": "Quinazolin-4(3H)-one Core - rigid pyrimidine-benzene lactam",
     },
     "coumarin": {
@@ -85,11 +85,11 @@ MCS_SCAFFOLDS = {
         "description": "Phthalazinone Core - stable N-N bond, unique H-bond vectors",
     },
     "oxadiazole_124": {
-        "smarts": "c1noc(n1)",
+        "smarts": "[c;R1]1[n;R1][o;R1][c;R1][n;R1]1",
         "description": "1,2,4-Oxadiazole Core - bioisostere for esters/amides, UV+water stable",
     },
     "oxadiazole_134": {
-        "smarts": "c1nnc(o1)",
+        "smarts": "[c;R1]1[n;R1][n;R1][c;R1][o;R1]1",
         "description": "1,3,4-Oxadiazole Core - redirects exit vectors ~140 degrees",
     },
     "pyrimidine": {
@@ -140,12 +140,12 @@ def _get_alternative_smarts(name):
         "benzothiazole": "c1ccc2c(c1)nc(s2)",
         "benzoxazole": "c1ccc2c(c1)nc(o2)",
         "phthalimide": "O=C1NC(=O)c2ccccc21",
-        "saccharin": "O=C1NS(=O)(=O)c2ccccc21",
-        "quinazolinone": "O=c1[nH]cnc2ccccc12",
+        "saccharin": "O=S1(=O)Nc2ccccc21",
+        "quinazolinone": "O=c1cnc2ccccc2[nH]1",
         "coumarin": "O=c1ccc2ccccc2o1",
         "phthalazinone": "O=c1[nH]ncc2ccccc12",
-        "oxadiazole_124": "c1ncon1",
-        "oxadiazole_134": "c1nnoc1",
+        "oxadiazole_124": "[c;R1]1[n;R1][o;R1][c;R1][n;R1]1",
+        "oxadiazole_134": "[c;R1]1[n;R1][n;R1][c;R1][o;R1]1",
         "pyrimidine": "c1ccncn1",
         "triazine": "c1ncncn1",
         "carbazole": "c1ccc2c(c1)[nH]c1ccccc12",
