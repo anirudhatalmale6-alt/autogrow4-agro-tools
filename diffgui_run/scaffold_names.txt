@@ -1,0 +1,15 @@
+quinoline
+isoquinoline
+naphthalene
+benzothiazole
+benzoxazole
+phthalimide
+saccharin
+quinazolinone
+coumarin
+phthalazinone
+oxadiazole_124
+oxadiazole_134
+pyrimidine
+triazine
+carbazole
