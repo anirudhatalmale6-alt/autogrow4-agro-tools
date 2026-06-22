@@ -24,7 +24,15 @@ from plant_scoring.descriptors import (
     descriptor_provenance_flag,
     detect_labile_groups,
 )
+from plant_scoring.classifier import classify_compound
+from plant_scoring.gates import score_all_gates
 from plant_scoring import schema_io
+
+try:
+    from plant_scoring.gate5 import detect_alerts, compute_gate5_multiplier
+    _HAS_GATE5 = True
+except ImportError:
+    _HAS_GATE5 = False
 
 
 # The 8 seed compounds from Compound_Table_Schema_v1.xlsx
@@ -175,10 +183,13 @@ def process_compound(
     row["inchikey"] = std.get("inchikey") or ""
     row["canonical_smiles"] = std["canonical_smiles"]
 
-    # Classification (module7_class requires Gate implementation — leave blank)
+    # Classification via Module 7
+    classification = classify_compound(mol, desc)
+    result["classification"] = classification
+
     row["compound_category"] = compound_category or ""
     row["chemical_class"] = ""
-    row["module7_class"] = ""
+    row["module7_class"] = classification["module7_class"]
     row["application_route"] = ""
 
     # Target (labels set by the PI, not the pipeline)
@@ -218,12 +229,31 @@ def process_compound(
     pk = desc.get("pka_acidic", {})
     row["pka_provenance"] = _map_provenance(pk.get("provenance"))
 
-    # Gate 5
+    # Gate 5 alerts
+    gate5_mult = 1.0
+    gate5_alert_ids = []
+    if _HAS_GATE5:
+        alerts = detect_alerts(mol)
+        gate5_mult, g5_details = compute_gate5_multiplier(
+            mol, alerts=alerts, classification=classification)
+        gate5_alert_ids = g5_details.get("fired_alerts", [])
+        result["gate5_details"] = g5_details
+
     row["known_labile_groups"] = ";".join(labile) if labile else ""
-    row["gate5_alerts_predicted"] = ""
+    row["gate5_alerts_predicted"] = ";".join(gate5_alert_ids) if gate5_alert_ids else ""
     row["metabolic_halflife_plant"] = ""
     row["known_metabolites_smiles"] = ""
     row["biotransformer_runID"] = ""
+
+    # Score all gates
+    scoring = score_all_gates(desc, classification,
+                              gate5_alerts=gate5_alert_ids,
+                              gate5_multiplier=gate5_mult)
+    result["scoring"] = scoring
+    comp = scoring["composite_result"]
+    result["composite_score"] = comp["composite"]
+    result["bottleneck"] = comp["bottleneck"]
+    result["design_flags"] = comp.get("design_flags", [])
 
     # QA
     row["descriptor_provenance_flag"] = prov_flag
@@ -443,6 +473,29 @@ def run_demo():
         print(f"{row['compound_id']:<10} {_fa(row.get('abraham_E'))} "
               f"{_fa(row.get('abraham_S'))} {_fa(row.get('abraham_A'))} "
               f"{_fa(row.get('abraham_B'))} {_fa(row.get('abraham_V'))}")
+
+    # Table 5: Gate Scores + Composite
+    print(f"\nTABLE 5: GATE SCORES & COMPOSITE")
+    print("=" * 120)
+    print(f"{'ID':<10} {'Class':<28} {'G1':>5} {'G2':>5} {'G3':>5} "
+          f"{'G4':>5} {'G5':>5} {'Comp':>6} {'Bottleneck':<12} {'Flags'}")
+    print("-" * 120)
+    for r in results:
+        row = r.get("row")
+        if row is None:
+            continue
+        sc = r.get("scoring", {})
+        comp = sc.get("composite_result", {})
+        gs = comp.get("gate_scores", {})
+        flags = ", ".join(comp.get("design_flags", [])[:3]) or "---"
+        cls_name = row.get("module7_class", "---")
+        if len(cls_name) > 27:
+            cls_name = cls_name[:25] + ".."
+        print(f"{row['compound_id']:<10} {cls_name:<28} "
+              f"{gs.get('gate1', 0):5.3f} {gs.get('gate2', 0):5.3f} "
+              f"{gs.get('gate3', 0):5.3f} {gs.get('gate4', 0):5.3f} "
+              f"{gs.get('gate5', 1):5.3f} {comp.get('composite', 0):6.4f} "
+              f"{comp.get('bottleneck', '---'):<12} {flags}")
 
     # Validation summary
     print(f"\nVALIDATION WARNINGS")
